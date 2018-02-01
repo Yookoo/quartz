@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+       					   http://www.springframework.org/schema/beans/spring-beans.xsd
+       					   http://www.springframework.org/schema/tx 
+       					   http://www.springframework.org/schema/tx/spring-tx.xsd
+       					   http://www.springframework.org/schema/aop 
+       					   http://www.springframework.org/schema/aop/spring-aop.xsd
+       					   http://www.springframework.org/schema/mvc
+       					   http://www.springframework.org/schema/mvc/spring-mvc.xsd
+       					   http://www.springframework.org/schema/context 
+       					   http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<!-- quartz配置有两种方式 -->
+	<!-- 第一种：使用MethodInvokingJobDetailFactoryBean -->
+	<bean id="mySimpleJobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean" >
+		<property name="targetObject" ref="myBean"/>
+		<property name="targetMethod" value="printMessage"/>
+	</bean>
+
+	<!--第二种：使用 JobDetailFactoryBean -->
+	<!-- 需要给业务传递数据，想要更加灵活的话就使用此方式 -->
+	<bean id = "firstComplexJobDetail" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+		<property name="jobClass" value="com.edu.entity.FirstScheduledJob"></property>
+		<property name="jobDataMap">
+			<map>
+				<entry key="anotherBean" value-ref="anotherBean"></entry>
+			</map>
+		</property>
+		<property name="durability" value="true"></property>
+	</bean>
+
+	<!-- 配置触发器Triger -->
+	<!-- 等待1秒钟之后开始执行，每隔2秒执行一次 -->
+	<bean id="mySimpleTriger" class="org.springframework.scheduling.quartz.SimpleTriggerFactoryBean">
+		<property name="jobDetail" ref="mySimpleJobDetail"></property>
+		<property name="startDelay" value="1000"></property>
+		<property name="repeatInterval" value="2000"></property>
+	</bean>
+	
+	<!-- 每隔5秒执行一次 -->
+	<bean id="myCronTriger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="firstComplexJobDetail"></property>
+		<property name="cronExpression" value="0/5 * * ? * *"></property>
+	</bean>
+	
+	<!-- 配置调度器Scheduler -->
+	<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="jobDetails">
+			<list>
+				<ref bean="mySimpleJobDetail"/>
+				<ref bean="firstComplexJobDetail"/>
+			</list>
+		</property>
+		<property name="triggers">
+			<list>
+				<ref bean="mySimpleTriger"/>
+				<ref bean="myCronTriger"/>
+			</list>
+		</property>
+	</bean>
+</beans>
